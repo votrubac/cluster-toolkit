@@ -17,10 +17,13 @@
 blueprint_name: hpc-slurm
 
 vars:
-  project_id:  ## Set GCP Project ID Here ##
-  deployment_name: hpc-slurm
+  project_id:  io-playground
+  deployment_name: t2a-smoke-test
   region: us-central1
   zone: us-central1-a
+  instance_image:
+    family: slurm-gcp-6-6-ubuntu-2204-lts-arm64
+    project: schedmd-slurm-public
 
 # Documentation for each of the modules used below can be found at
 # https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
@@ -44,10 +47,10 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
-      node_count_dynamic_max: 4
-      machine_type: n2-standard-2
+      node_count_dynamic_max: 3
+      machine_type: t2a-standard-1
       enable_placement: false # the default is: true
-      allow_automatic_updates: false
+      allow_automatic_updates: true
 
   - id: debug_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
@@ -64,7 +67,7 @@ deployment_groups:
     settings:
       node_count_dynamic_max: 20
       bandwidth_tier: gvnic_enabled
-      allow_automatic_updates: false
+      allow_automatic_updates: true
 
   - id: compute_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
@@ -73,31 +76,31 @@ deployment_groups:
     settings:
       partition_name: compute
 
-  - id: h3_nodeset
+  - id: t2a_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
       node_count_dynamic_max: 20
       # Note that H3 is available in only specific zones. https://cloud.google.com/compute/docs/regions-zones
-      machine_type: h3-standard-88
+      machine_type: t2a-standard-1
       # H3 does not support pd-ssd and pd-standard
       # https://cloud.google.com/compute/docs/compute-optimized-machines#h3_disks
       disk_type: pd-balanced
       bandwidth_tier: gvnic_enabled
-      allow_automatic_updates: false
+      allow_automatic_updates: true
 
-  - id: h3_partition
+  - id: t2a_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use:
-    - h3_nodeset
+    - t2a_nodeset
     settings:
-      partition_name: h3
+      partition_name: t2a
 
   - id: slurm_login
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
     use: [network]
     settings:
-      machine_type: n2-standard-4
+      machine_type: t2a-standard-1
       enable_login_public_ips: true
 
   - id: slurm_controller
@@ -106,8 +109,9 @@ deployment_groups:
     - network
     - debug_partition
     - compute_partition
-    - h3_partition
+    - t2a_partition
     - homefs
     - slurm_login
     settings:
+      machine_type: t2a-standard-1    
       enable_controller_public_ips: true
